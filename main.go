@@ -14,8 +14,8 @@ import (
 
 type Config struct {
 	ProjectName string
-	GenMode     string // "makefile" or "project"
-	Language    string // "c", "cpp", "go"
+	GenMode     string
+	Language    string
 	Ext         string
 	CC          string
 	Flags       []string
@@ -26,8 +26,7 @@ type Config struct {
 func main() {
 	var cfg Config
 
-	// Header
-	fmt.Println("\033[38;5;205m\033[1mmkprj - Interactive boilerplate and Makefile generator\033[0m\n")
+	fmt.Println("\033[38;5;205m\033[1mmkprj - Interactive boilerplate and Makefile generator\033[0m")
 
 	// Step 1: Base Configuration
 	form := huh.NewForm(
@@ -170,18 +169,18 @@ func generateMakefile(cfg Config) error {
 	var sb strings.Builder
 	flags := strings.Join(cfg.Flags, " ")
 
-	sb.WriteString(fmt.Sprintf("PROJECT_NAME := %s\n", cfg.ProjectName))
+	fmt.Fprintf(&sb, "PROJECT_NAME := %s\n", cfg.ProjectName)
 	
 	if cfg.Language == "go" {
-		sb.WriteString(fmt.Sprintf("LDFLAGS      := %s\n\nbuild:\n\tgo mod tidy\n\tgo build -ldflags=\"$(LDFLAGS)\" -o $(PROJECT_NAME) main.go\n", flags))
+		fmt.Fprintf(&sb, "LDFLAGS      := %s\n\nbuild:\n\tgo mod tidy\n\tgo build -ldflags=\"$(LDFLAGS)\" -o $(PROJECT_NAME) main.go\n", flags)
 	} else {
-		sb.WriteString(fmt.Sprintf("CC      := %s\nCFLAGS  := %s\nSRC     := $(wildcard *.%s)\n\nbuild: \n\t$(CC) $(SRC) -o $(PROJECT_NAME) $(CFLAGS)\n", cfg.CC, flags, cfg.Ext))
+		fmt.Fprintf(&sb, "CC      := %s\nCFLAGS  := %s\nSRC     := $(wildcard *.%s)\n\nbuild: \n\t$(CC) $(SRC) -o $(PROJECT_NAME) $(CFLAGS)\n", cfg.CC, flags, cfg.Ext)
 	}
 
 	if cfg.Install {
-		sb.WriteString("\ninstall: build\n\tinstall -m 755 $(PROJECT_NAME) /usr/local/bin/\n\nuninstall:\n\trm -f /usr/local/bin/$(PROJECT_NAME)\n")
+		fmt.Fprintf(&sb, "\ninstall: build\n\tinstall -m 755 $(PROJECT_NAME) /usr/local/bin/\n\nuninstall:\n\trm -f /usr/local/bin/$(PROJECT_NAME)\n")
 	}
 
-	sb.WriteString("\nclean:\n\trm -f $(PROJECT_NAME) *.o\n\n.PHONY: build clean install uninstall\n")
+	fmt.Fprintf(&sb, "\nclean:\n\trm -f $(PROJECT_NAME) *.o\n\n.PHONY: build clean install uninstall\n")
 	return os.WriteFile(filepath.Join(cfg.TargetDir, "Makefile"), []byte(sb.String()), 0644)
 }
